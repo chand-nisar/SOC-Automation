@@ -1,0 +1,81 @@
+{
+  "name": "SOC-Automation",
+  "description": "Automated SOC pipeline — Wazuh → VirusTotal → TheHive → Email",
+  "author": "Chand Nisar — SMALTER 2026",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Wazuh Webhook Trigger",
+      "type": "trigger",
+      "description": "Receives Wazuh alerts via HTTP POST webhook",
+      "config": {
+        "method": "POST",
+        "content_type": "application/json"
+      }
+    },
+    {
+      "id": "2",
+      "name": "Parse Alert",
+      "type": "action",
+      "description": "Extracts key fields from Wazuh JSON alert",
+      "config": {
+        "fields": [
+          "rule.id",
+          "rule.level",
+          "rule.description",
+          "agent.name",
+          "agent.ip",
+          "win.eventdata.originalFileName",
+          "win.eventdata.hashes",
+          "timestamp"
+        ]
+      }
+    },
+    {
+      "id": "3",
+      "name": "VirusTotal IOC Lookup",
+      "type": "action",
+      "description": "Submits file hash to VirusTotal API v3 for reputation scoring",
+      "config": {
+        "api_version": "v3",
+        "endpoint": "https://www.virustotal.com/api/v3/files",
+        "method": "GET",
+        "input": "win.eventdata.hashes"
+      }
+    },
+    {
+      "id": "4",
+      "name": "TheHive Create Case",
+      "type": "action",
+      "description": "Creates an incident case in TheHive with all enriched data",
+      "config": {
+        "url": "http://10.217.10.115:9000",
+        "organisation": "SMALTER-SOC",
+        "severity": 3,
+        "tlp": 2,
+        "case_template": {
+          "title": "[Wazuh] {{rule.description}} on {{agent.name}}",
+          "description": "Rule {{rule.id}} level {{rule.level}} triggered on {{agent.name}} ({{agent.ip}}). VirusTotal score included.",
+          "tags": ["wazuh", "sysmon", "automated"]
+        }
+      }
+    },
+    {
+      "id": "5",
+      "name": "Send Email Notification",
+      "type": "action",
+      "description": "Sends email alert to SOC analyst",
+      "config": {
+        "to": "analyst@smalter-soc.local",
+        "subject": "Wazuh Alert — {{rule.description}} on {{agent.name}}",
+        "body": "Alert level {{rule.level}} triggered.\nRule: {{rule.id}}\nHost: {{agent.name}} ({{agent.ip}})\nVirusTotal: {{virustotal.score}}\nTheHive case created automatically."
+      }
+    }
+  ],
+  "edges": [
+    {"from": "1", "to": "2"},
+    {"from": "2", "to": "3"},
+    {"from": "3", "to": "4"},
+    {"from": "4", "to": "5"}
+  ]
+}
