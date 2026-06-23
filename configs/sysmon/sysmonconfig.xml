@@ -1,0 +1,50 @@
+<!-- sysmonconfig.xml — Sysmon configuration -->
+<!-- SOC Automation Lab — SMALTER 2026        -->
+<!-- Captures Event ID 1, 3, 7, 10            -->
+
+<Sysmon schemaversion="4.70">
+
+  <HashAlgorithms>md5,sha256,imphash</HashAlgorithms>
+  <CheckRevocation>False</CheckRevocation>
+
+  <EventFiltering>
+
+    <!-- Event ID 1 — Process Creation -->
+    <RuleGroup name="" groupRelation="or">
+      <ProcessCreate onmatch="exclude">
+        <Image condition="is">C:\Windows\System32\wermgr.exe</Image>
+        <Image condition="is">C:\Windows\System32\conhost.exe</Image>
+      </ProcessCreate>
+    </RuleGroup>
+
+    <!-- Event ID 3 — Network Connection -->
+    <RuleGroup name="" groupRelation="or">
+      <NetworkConnect onmatch="exclude">
+        <Image condition="is">C:\Windows\System32\svchost.exe</Image>
+      </NetworkConnect>
+    </RuleGroup>
+
+    <!-- Event ID 7 — Image Loaded (DLL) -->
+    <RuleGroup name="" groupRelation="or">
+      <ImageLoad onmatch="include">
+        <ImageLoaded condition="contains">mimikatz</ImageLoaded>
+      </ImageLoad>
+    </RuleGroup>
+
+    <!-- Event ID 10 — Process Access (credential dumping) -->
+    <RuleGroup name="" groupRelation="or">
+      <ProcessAccess onmatch="include">
+        <TargetImage condition="is">C:\Windows\system32\lsass.exe</TargetImage>
+      </ProcessAccess>
+    </RuleGroup>
+
+    <!-- Event ID 11 — File Create -->
+    <RuleGroup name="" groupRelation="or">
+      <FileCreate onmatch="include">
+        <TargetFilename condition="contains">mimikatz</TargetFilename>
+      </FileCreate>
+    </RuleGroup>
+
+  </EventFiltering>
+
+</Sysmon>
