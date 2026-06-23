@@ -1,0 +1,17 @@
+<!-- Local custom rules — SOC Automation Lab -->
+<!-- Author: Chand Nisar — SMALTER 2026      -->
+
+<group name="local,sysmon,">
+
+  <!-- Rule 100002: Mimikatz detected by original filename -->
+  <!-- Targets originalFileName field — works even if binary is renamed -->
+  <rule id="100002" level="15">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.originalFileName" type="pcre2">(?i)mimikatz\.exe</field>
+    <description>Mimikatz usage detected on $(win.system.computer)</description>
+    <mitre>
+      <id>T1003</id>
+    </mitre>
+  </rule>
+
+</group>
